@@ -26,14 +26,14 @@ class SpaceTweets
 
     public function updateTweets(string $usernames): void
     {
-        $this->getUsers($usernames);
+        $this->fetchUsers($usernames);
 
         $this->userCollection->update();
 
-        $this->getTweets();
+        $this->fetchTweets();
     }
 
-    public function getUsers(string $usernames): void
+    public function fetchUsers(string $usernames): void
     {
         $response = $this->tweeterHttpClient->request(
             "GET",
@@ -49,8 +49,7 @@ class SpaceTweets
             throw new \Exception('Response status code is different than expected.');
         }
 
-        $responseJson = $response->getContent();
-        $responseData = json_decode($responseJson, true, 512, JSON_THROW_ON_ERROR);
+        $responseData = json_decode($response->getContent(), true);
 
         foreach ($responseData['data'] as $userData) {
             $user = new User();
@@ -61,15 +60,15 @@ class SpaceTweets
         }
     }
 
-    private function getTweets(): void
+    private function fetchTweets(): void
     {
         foreach ($this->userCollection->getAll() as $user) {
-            $this->getUserTweets($user);
+            $this->fetchUserTweets($user);
             $this->tweetCollection->update();
         }
     }
 
-    public function getUserTweets(User $user): void
+    public function fetchUserTweets(User $user): void
     {
         $response = $this->tweeterHttpClient->request(
             "GET",
@@ -85,16 +84,15 @@ class SpaceTweets
             throw new \Exception('Response status code is different than expected.');
         }
 
-        $responseJson = $response->getContent();
-        $responseData = json_decode($responseJson, true, 512, JSON_THROW_ON_ERROR);
+        $responseData = json_decode($response->getContent(), true);
 
         $this->tweetCollection->clear();
 
-        foreach ($responseData['data'] as $datum) {
+        foreach ($responseData['data'] as $tweetData) {
             $tweet = new Tweet();
-            $tweet->setId($datum['id']);
+            $tweet->setId($tweetData['id']);
+            $tweet->setText($tweetData['text']);
             $tweet->setUser($user);
-            $tweet->setText($datum['text']);
 
             $this->tweetCollection->add($tweet);
         }

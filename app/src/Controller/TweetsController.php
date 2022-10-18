@@ -5,7 +5,6 @@ namespace App\Controller;
 use App\Repository\UserRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Annotation\Route;
 
 class TweetsController extends AbstractController
@@ -16,7 +15,7 @@ class TweetsController extends AbstractController
         $user = $userRepository->findOneBy(['name' => $username]);
 
         if (!$user) {
-            throw new NotFoundHttpException();
+            $this->createNotFoundException('User not found');
         }
 
         return $this->json($user->getTweets());

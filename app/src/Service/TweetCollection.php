@@ -24,9 +24,9 @@ class TweetCollection
         $tweetRepository = $this->entityManager->getRepository(Tweet::class);
 
         foreach ($this->tweets as $tweet) {
-            $tweetExist = $tweetRepository->count(['id' => $tweet->getId()]);
+            $tweetExists = $tweetRepository->count(['id' => $tweet->getId()]);
 
-            if (!$tweetExist) {
+            if (!$tweetExists) {
                 $this->entityManager->persist($tweet);
             }
         }

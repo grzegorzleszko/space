@@ -2,15 +2,16 @@
 
 namespace App\Client;
 
+use App\Client\Exception\OAuthException;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 class TweeterHttpClient
 {
-    private $client;
-    private $baseUrl = 'https://api.twitter.com/2/';
+    private HttpClientInterface $client;
+    private string $oAuth2Url = 'https://api.twitter.com/oauth2/token?grant_type=client_credentials';
+    private string $baseUrl = 'https://api.twitter.com/2/';
     private string $accessToken;
-    private $oAuth2Url = 'https://api.twitter.com/oauth2/token?grant_type=client_credentials';
 
     public function __construct(
         HttpClientInterface $client,
@@ -39,22 +40,28 @@ class TweeterHttpClient
 
     private function fetchOAuth2Token(string $apiKey, string $secretApiKey): void
     {
-        $response = $this->client->request(
-            "POST",
-            $this->oAuth2Url,
-            [
-                'auth_basic' => [$apiKey, $secretApiKey],
-            ]
-        );
-
-        if (200 !== $response->getStatusCode()) {
-            var_dump($response->getContent());
-
-            throw new \Exception('Response status code is different than expected.');
+        try {
+            $response = $this->client->request(
+                "POST",
+                $this->oAuth2Url,
+                [
+                    'auth_basic' => [$apiKey, $secretApiKey],
+                ]
+            );
+        } catch (\Exception $e) {
+            throw new OAuthException('Error when calling token endpoint.', 0, $e);
         }
 
-        $responseArray = $response->toArray();
+        if (200 !== $response->getStatusCode()) {
+            throw new OAuthException('Response status code is different than expected.');
+        }
 
-        $this->accessToken = $responseArray['access_token'];
+        $token = $response->toArray();
+
+        if (!array_key_exists('access_token', $token) || !is_string($token['access_token'])) {
+            throw new OAuthException('Access token not found in token endpoint response.');
+        }
+
+        $this->accessToken = $token['access_token'];
     }
 }
