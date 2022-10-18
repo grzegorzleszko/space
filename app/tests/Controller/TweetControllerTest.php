@@ -24,6 +24,12 @@ class TweetControllerTest extends WebTestCase
         self::assertResponseStatusCodeSame(200);
         $this->assertResponseHeaderSame('content-type', 'application/json');
         $this->assertJson($this->client->getResponse()->getContent());
+
+        $data = json_decode($this->client->getResponse()->getContent(), true);
+        $tweet = array_pop($data);
+
+        $this->assertArrayHasKey('id', $tweet);
+        $this->assertArrayHasKey('text', $tweet);
     }
 
 //    public function testNew(): void
